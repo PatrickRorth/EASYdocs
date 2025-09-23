@@ -1,2 +1,2 @@
-# EasyDoc
+# EASYdocs
 Easy documentation with Markdown
