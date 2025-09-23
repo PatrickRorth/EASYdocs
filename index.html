@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EASYdocs</title>
+  <meta name="description" content="EASYdocs documentation." />
+  <!-- Tailwind (CDN) + Typography plugin -->
+  <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+  <!-- Marked (Markdown → HTML) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- Prism (syntax highlight) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1/themes/prism-tomorrow.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-core.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/plugins/autoloader/prism-autoloader.min.js"></script>
+  <style>
+    .prose pre { overflow: auto; }
+    .prose code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    /* Keep anchors visible under sticky header */
+    #content h1, #content h2, #content h3, #content h4 { scroll-margin-top: 96px; position: relative; }
+    mark.search-hit { background: rgba(250, 204, 21, 0.35); color: #fff; padding: 0 2px; border-radius: 2px; }
+    .anchor-link { opacity:0; margin-left:0.5rem; font-size:0.8em; }
+    #content h2:hover .anchor-link, #content h3:hover .anchor-link { opacity:1; }
+    /* Search dropdown fallback styles */
+    #search-results { position:absolute; top:100%; left:0; right:0; background:#18181b; border:1px solid rgba(255,255,255,0.1); z-index:50; max-height:16rem; overflow-y:auto; }
+    #search-results button { width:100%; text-align:left; padding:0.5rem 0.75rem; font-size:0.875rem; color:#e4e4e7; }
+    #search-results button:hover { background:#27272a; color:#fff; }
+  </style>
+</head>
+<body class="min-h-screen bg-[#0b0b0e] text-zinc-200">
+  <!-- Topbar -->
+  <header class="sticky top-0 z-40 backdrop-blur bg-black/40 border-b border-white/10">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-14 flex items-center gap-4 relative">
+      <a href="/" class="font-semibold tracking-wider text-white">EASY<span class="text-white/60">docs</span></a>
+      <span class="text-white/40">/</span>
+      <a href="#/getting-started" class="text-white/80 hover:text-white">Docs</a>
+      <div class="ml-auto w-64 hidden md:block relative">
+        <label class="relative block">
+          <input id="search" placeholder="Search docs…" class="w-full rounded-lg bg-zinc-900 border border-white/10 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-white/20" />
+          <span class="absolute right-2 top-1.5 text-xs text-white/40">Enter</span>
+        </label>
+        <div id="search-results" class="hidden rounded-lg shadow-xl bg-zinc-900 border border-white/10"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 grid grid-cols-12 gap-6 py-6">
+    <!-- Sidebar -->
+    <aside class="col-span-12 md:col-span-3 lg:col-span-2">
+      <nav id="nav" class="space-y-4"></nav>
+    </aside>
+
+    <!-- Content -->
+    <main class="col-span-12 md:col-span-9 lg:col-span-7">
+      <article id="content" class="prose prose-invert max-w-none"><!-- injected markdown --></article>
+      <div id="updated" class="text-xs text-white/40 mt-6"></div>
+    </main>
+
+    <!-- TOC -->
+    <aside class="hidden lg:block col-span-3">
+      <div class="sticky top-20">
+        <div class="text-xs uppercase tracking-widest text-white/60 mb-2">On this page</div>
+        <ol id="toc" class="text-sm space-y-1"></ol>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="border-t border-white/10">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 text-sm text-white/50 flex items-center justify-between">
+      <div>© <span id="year"></span> EASYdocs</div>
+      <a class="hover:text-white/80" href="/">Back to site</a>
+    </div>
+  </footer>
+
+<script>
+  // ---- Config: your exact NAV ----
+  const NAV = [
+    { section: 'Getting Started', pages: [
+      { title: 'Overview', slug: 'getting-started', file: 'getting-started.md' },
+      { title: 'Guide', slug: 'guide', file: 'guide.md' },
+    ]},
+    { section: 'Project', pages: [
+      { title: 'Beer', slug: 'beer', file: 'beer.md' },
+      { title: 'Cookies', slug: 'cookies', file: 'cookies.md' },
+      { title: 'How to clean up', slug: 'howtoclean', file: 'howtoclean.md' },
+    ]},
+  ];
+
+  // ---- Helpers ----
+  const qs = (s, el=document) => el.querySelector(s);
+  const qsa = (s, el=document) => [...el.querySelectorAll(s)];
+  const contentEl = qs('#content');
+  const navEl = qs('#nav');
+  const tocEl = qs('#toc');
+  const resultsEl = qs('#search-results');
+  let SEARCH_INDEX = null; // { pages: [{slug,title,text}], built: true }
+
+  // Router hash parser
+  function parseHash() {
+    const raw = location.hash.slice(1); // remove '#'
+    const trimmed = raw.startsWith('/') ? raw.slice(1) : raw;
+    const [path, query] = trimmed.split('?');
+    const slug = path && path.length ? path : (NAV[0]?.pages[0]?.slug || 'getting-started');
+    const params = new URLSearchParams(query || '');
+    return { slug, params };
+  }
+
+  // Sidebar
+  function buildNav() {
+    navEl.innerHTML = '';
+    NAV.forEach(group => {
+      const h = document.createElement('div');
+      h.className = 'text-xs uppercase tracking-widest text-white/60';
+      h.textContent = group.section;
+      navEl.appendChild(h);
+      const ul = document.createElement('ul');
+      ul.className = 'mt-2 space-y-1';
+      group.pages.forEach(p => {
+        const li = document.createElement('li');
+        const a = document.createElement('a');
+        a.href = `#/${p.slug}`;
+        a.textContent = p.title;
+        a.className = 'block rounded-md px-2 py-1 text-white/80 hover:bg-white/5 hover:text-white';
+        li.appendChild(a);
+        ul.appendChild(li);
+      });
+      navEl.appendChild(ul);
+    });
+  }
+
+  // Ensure every H2/H3 has a stable id and add copy-link icon
+  function ensureHeadingIds() {
+    const heads = qsa('#content h2, #content h3');
+    const slugify = (t) => (t||'').toLowerCase().trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-');
+    const used = new Set();
+    heads.forEach(h => {
+      if (!h.id) {
+        let base = slugify(h.textContent) || 'section';
+        let id = base, i = 1;
+        while (used.has(id) || document.getElementById(id)) { id = base + '-' + (i++); }
+        h.id = id;
+      }
+      used.add(h.id);
+      if (!h.querySelector('.anchor-link')){
+        const a = document.createElement('a');
+        a.href = `#${h.id}`;
+        a.className = 'anchor-link text-white/40 hover:text-white';
+        a.setAttribute('title','Copy link');
+        a.innerHTML = '🔗';
+        a.addEventListener('click', (e)=>{
+          e.preventDefault();
+          const url = window.location.origin + window.location.pathname + `#/${parseHash().slug}?h=${encodeURIComponent(h.id)}`;
+          navigator.clipboard.writeText(url).catch(()=>{});
+          a.innerHTML = '✅';
+          setTimeout(()=>a.innerHTML='🔗',1500);
+        });
+        h.appendChild(a);
+      }
+    });
+  }
+
+  // Build right-side TOC
+  function buildTOC(current) {
+    tocEl.innerHTML = '';
+    const heads = qsa('h2, h3', contentEl);
+    heads.forEach(h => {
+      const li = document.createElement('li');
+      li.style.marginLeft = h.tagName === 'H3' ? '1rem' : '0';
+      const a = document.createElement('a');
+      a.textContent = h.textContent;
+      a.className = 'text-white/70 hover:text-white';
+      a.href = '#/' + current + '?h=' + encodeURIComponent(h.id);
+      li.appendChild(a);
+      tocEl.appendChild(li);
+    });
+  }
+
+  // ---- Search index + utilities ----
+  async function buildSearchIndex() {
+    const pages = NAV.flatMap(g => g.pages);
+    const out = [];
+    for (const p of pages) {
+      try {
+        const res = await fetch('pages/' + p.file, { cache: 'no-store' });
+        const txt = res.ok ? await res.text() : '';
+        out.push({ slug: p.slug, title: p.title, text: txt });
+      } catch { out.push({ slug: p.slug, title: p.title, text: '' }); }
+    }
+    SEARCH_INDEX = { pages: out, built: true };
+  }
+
+  function norm(s){
+    return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  }
+  function escapeRegex(s){ return (s||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+  function firstHeadingIdFromMarkdown(md, term){
+    const nterm = norm(term);
+    const lines = (md||'').split(/\r?\n/);
+    for (const line of lines){
+      if (/^\s*#{2,3}\s+/.test(line)){
+        const title = line.replace(/^\s*#{2,3}\s+/, '').trim();
+        if (norm(title).includes(nterm)){
+          const base = norm(title).replace(/[^a-z0-9\s-]/g,'').replace(/\s+/g,'-').replace(/-+/g,'-') || 'section';
+          return base;
+        }
+      }
+    }
+    return '';
+  }
+
+  // Highlight matches on the current page (skip code/pre)
+  function highlightTerm(term){
+    if (!term) return;
+    const root = contentEl;
+    const skip = new Set(['CODE','PRE','KBD','SAMP']);
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node){
+        const p = node.parentElement;
+        if (!p || skip.has(p.tagName)) return NodeFilter.FILTER_REJECT;
+        return node.nodeValue.trim() ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    const re = new RegExp(escapeRegex(term), 'gi');
+    nodes.forEach(n => {
+      const html = n.nodeValue.replace(re, m => `<mark class="search-hit">${m}</mark>`);
+      if (html !== n.nodeValue){ const span = document.createElement('span'); span.innerHTML = html; n.parentNode.replaceChild(span, n); }
+    });
+  }
+
+  // ---- Search dropdown ----
+  let _results = []; let _active = -1;
+
+  function renderResults(arr){
+    _results = arr; _active = arr.length?0:-1;
+    if (!arr.length){ resultsEl.classList.add('hidden'); resultsEl.innerHTML=''; return; }
+    resultsEl.classList.remove('hidden');
+    resultsEl.innerHTML = arr.map((r,i)=>`
+      <button data-i="${i}" class="w-full text-left px-3 py-2 hover:bg-white/5 ${i===_active?'bg-white/10':''}">
+        <div class="text-sm text-white">${r.title}</div>
+        <div class="text-xs text-white/50">#/${r.slug}${r.h?`?h=${r.h}`:''}</div>
+      </button>`).join('');
+    resultsEl.querySelectorAll('button').forEach(btn => btn.addEventListener('click', ()=>{
+      const i = +btn.dataset.i; navigateToResult(_results[i]);
+    }));
+  }
+
+  async function searchCandidates(term){
+    const raw = term.trim();
+    if (!raw){ renderResults([]); return; }
+    if (!SEARCH_INDEX) await buildSearchIndex();
+    const normed = norm(raw);
+    const pages = SEARCH_INDEX.pages;
+    const scored = [];
+    for (const p of pages){
+      const t = norm(p.title), s = norm(p.slug), txt = norm(p.text||'');
+      let score = -1; let h = '';
+      if (t.includes(normed)) score = Math.max(score, 1000);
+      if (s.includes(normed)) score = Math.max(score, 800);
+      if (txt.includes(normed)) { score = Math.max(score, 100); h = firstHeadingIdFromMarkdown(p.text||'', raw); }
+      if (score >= 0) scored.push({ slug: p.slug, title: p.title, score, h, q: raw });
+    }
+    scored.sort((a,b)=>b.score-a.score);
+    renderResults(scored.slice(0,8));
+  }
+
+  function navigateToResult(r){
+    if (!r) return;
+    const q = r.q ? `&q=${encodeURIComponent(r.q)}` : '';
+    if (r.h){ location.hash = `#/${r.slug}?h=${encodeURIComponent(r.h)}${q}`; }
+    else { location.hash = `#/${r.slug}${q?`?${q.slice(1)}`:''}`; }
+    renderResults([]);
+  }
+
+  // ---- Loader ----
+  async function loadPage(slug, params = new URLSearchParams()) {
+    const entry = NAV.flatMap(g => g.pages).find(p => p.slug === slug);
+    if (!entry) {
+      contentEl.innerHTML = '<h1>404 – Page Not Found</h1><p>The requested documentation page does not exist.</p>';
+      return;
+    }
+    const url = `pages/` + entry.file;
+    let md, updatedTxt = '';
+    try {
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error('status ' + res.status);
+      md = await res.text();
+      const lastMod = res.headers.get('last-modified');
+      updatedTxt = lastMod ? `Last updated: ${new Date(lastMod).toLocaleString()}` : '';
+    } catch (e) {
+      md = `# ${entry.title}\n\n_File \`${entry.file}\` not found yet. Create it under \`/docs/pages/${entry.file}\`._`;
+      updatedTxt = '';
+    }
+    contentEl.innerHTML = marked.parse(md, { mangle: false, headerIds: true });
+    ensureHeadingIds();
+    buildTOC(slug);
+    if (window.Prism) Prism.highlightAllUnder(contentEl);
+    qs('#updated').textContent = updatedTxt;
+
+    // highlight active in sidebar
+    qsa('#nav a').forEach(a => a.classList.remove('bg-white/10', 'text-white'));
+    const active = qs(`#nav a[href="#/${entry.slug}"]`);
+    if (active) active.classList.add('bg-white/10','text-white');
+
+    document.title = `BLACKSIDE • ${entry.title}`;
+
+    // Optional jump to heading + highlight query
+    const h = params.get('h');
+    const q = params.get('q');
+    if (h) {
+      const el = document.getElementById(h);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (q) setTimeout(()=>highlightTerm(q), 0);
+  }
+
+  // Hash routing (also re-highlight on q=)
+  window.addEventListener('hashchange', () => {
+    const { slug, params } = parseHash();
+    loadPage(slug, params);
+    const q = params.get('q');
+    if (q) setTimeout(()=>highlightTerm(q), 60);
+  });
+
+  // Search input handlers
+  const searchInput = qs('#search');
+  if (searchInput) {
+    searchInput.addEventListener('input', (e)=> searchCandidates(e.currentTarget.value));
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown'){ e.preventDefault(); if (_results.length){ _active = Math.min(_active+1, _results.length-1); renderResults(_results); } }
+      else if (e.key === 'ArrowUp'){ e.preventDefault(); if (_results.length){ _active = Math.max(_active-1, 0); renderResults(_results); } }
+      else if (e.key === 'Enter'){ e.preventDefault(); if (_results.length) navigateToResult(_results[_active]||_results[0]); }
+      else if (e.key === 'Escape'){ renderResults([]); }
+    });
+    // click-away to close
+    document.addEventListener('click', (e)=>{
+      const box = resultsEl;
+      if (box && !box.contains(e.target) && e.target !== searchInput){ renderResults([]); }
+    });
+  }
+
+  // Init
+  document.getElementById('year').textContent = new Date().getFullYear();
+  buildNav();
+  const { slug, params } = parseHash();
+  loadPage(slug, params);
+  // warm search index in background (non-blocking)
+  buildSearchIndex();
+</script>
+</body>
+</html>
