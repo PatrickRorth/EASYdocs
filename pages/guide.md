@@ -2,81 +2,81 @@
 
 ---
 
-## Overskrifter
+## Headings
 ```md
-# H1 (stort kapitel)
-## H2 (sektion)
-### H3 (undersektion)
-#### H4 (sjældent brugt)
+# H1 (main chapter)
+## H2 (section)
+### H3 (subsection)
+#### H4 (rarely used)
 ```
 
-# H1 eksempel
-## H2 eksempel
-### H3 eksempel
-#### H4 eksempel
+# H1 example
+## H2 example
+### H3 example
+#### H4 example
 ---
 
-## Tekstformatering
+## Text Formatting
 ```md
-**Fed tekst**
-*Kursiv tekst*
-~~Gennemstreget~~
-`Inline kode`
-> Citat / note
+**Bold text**
+*Italic text*
+~~Strikethrough~~
+`Inline code`
+> Quote / note
 ```
 
-**Fed tekst**  
-*Kursiv tekst*  
-~~Gennemstreget~~  
-`Inline kode`
+**Bold text**  
+*Italic text*  
+~~Strikethrough~~  
+`Inline code`
 
-> Dette er et eksempel på et citat.
+> This is an example of a quote.
 
 ---
 
-## Lister
+## Lists
 ```md
-- Punkt 1
-- Punkt 2
-  - Underpunkt
+- Item 1
+- Item 2
+  - Subitem
 
-1. Første
-2. Anden
-   1. Underpunkt
+1. First
+2. Second
+   1. Subitem
 
 - [x] Done
-- [ ] Ikke færdig
+- [ ] Not done
 ```
 
-- Punkt 1
-- Punkt 2
-  - Underpunkt
+- Item 1
+- Item 2
+  - Subitem
 
-1. Første
-2. Anden
-   1. Underpunkt
+1. First
+2. Second
+   1. Subitem
 
 - [x] Done
-- [ ] Ikke færdig
+- [ ] Not done
 
 ---
 
-## Links og billeder
+## Links and Images
 ```md
-[Et link](https://blackside.dk)
-![Et billede](./screenshot.png)
+[A link](https://blackside.dk)
+![An image](./screenshot.png)
 ```
 
-[Et link](https://blackside.dk)  
-![Et billede](https://placekitten.com/300/150)
+[A link](https://blackside.dk)  
+![An image](https://placekitten.com/300/150)
 
 ---
 
-## Kodeblokke
+## Code Blocks
 ```md
 ```js
 function hello() {
-  console.log("Hej fra Blackside Docs");
+  console.log("Hello from Blackside Docs");
 }
 ```
 
@@ -93,7 +93,7 @@ Write-Host "Hello World"
 
 ```js
 function hello() {
-  console.log("Hej fra Blackside Docs");
+  console.log("Hello from Blackside Docs");
 }
 ```
 
@@ -109,7 +109,7 @@ Write-Host "Hello World"
 
 ---
 
-## Tabeller
+## Tables
 ```md
 | Feature        | Status   | Note          |
 |----------------|----------|---------------|
@@ -126,7 +126,7 @@ Write-Host "Hello World"
 
 ---
 
-## Horisontal linje
+## Horizontal Line
 ```md
 ---
 ```
@@ -135,40 +135,40 @@ Write-Host "Hello World"
 
 ---
 
-## Interne links
+## Internal Links
 ```md
 ## Installation
-Læs mere i [Konfiguration](#konfiguration)
+Read more in [Configuration](#configuration)
 
-## Konfiguration
-Her starter konfigurations-sektionen
+## Configuration
+Here starts the configuration section
 ```
 
 ---
 
-## Advarsler / noter
+## Warnings / Notes
 ```md
-> ⚠️ **Advarsel:** Eksperimentel feature.
-> ℹ️ **Info:** Husk at commit'e dine ændringer.
+> ⚠️ **Warning:** Experimental feature.
+> ℹ️ **Info:** Remember to commit your changes.
 ```
 
-> ⚠️ **Advarsel:** Eksperimentel feature.  
-> ℹ️ **Info:** Husk at commit'e dine ændringer.
+> ⚠️ **Warning:** Experimental feature.  
+> ℹ️ **Info:** Remember to commit your changes.
 
 ---
 
-## Kombineret eksempel
+## Combined Example
 ```md
 # Getting Started
 
-Velkommen til **BLACKSIDE Docs** 🎮
+Welcome to **BLACKSIDE Docs** 🎮
 
 ---
 
 ## Installation
-1. Klon repoet
-2. Kør `npm install`
-3. Start dev-serveren
+1. Clone the repo
+2. Run `npm install`
+3. Start the dev server
 ```
 ```bash
 npm run dev
@@ -181,8 +181,10 @@ npm run dev
 - [ ] Multiplayer
 - [ ] DLC
 
-| Modul   | Status  |
+| Module  | Status  |
 |---------|---------|
 | Core    | ✅      |
 | Combat  | 🔄      |
 | UI      | 🛠️      |
+
+```
