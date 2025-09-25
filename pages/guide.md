@@ -63,11 +63,11 @@
 
 ## Links and Images
 ```md
-[A link](https://blackside.dk)
+[A link](https://placekitten.com)
 ![An image](./screenshot.png)
 ```
 
-[A link](https://blackside.dk)  
+[A link](https://placekitten.com)  
 ![An image](https://placekitten.com/300/150)
 
 ---
@@ -76,7 +76,7 @@
 ```md
 ```js
 function hello() {
-  console.log("Hello from Blackside Docs");
+  console.log("Hello from placekitten.com");
 }
 ```
 
@@ -93,7 +93,7 @@ Write-Host "Hello World"
 
 ```js
 function hello() {
-  console.log("Hello from Blackside Docs");
+  console.log("Hello from placekitten.com");
 }
 ```
 
@@ -161,7 +161,7 @@ Here starts the configuration section
 ```md
 # Getting Started
 
-Welcome to **BLACKSIDE Docs** 🎮
+Welcome to **placekitten.com** 🎮
 
 ---
 
